@@ -4,7 +4,7 @@ namespace Vmwarephp\Exception;
 class Soap extends \Exception {
 
 	function __construct(\SoapFault $soapFault) {
-		parent::__construct($this->makeMessage($soapFault), 0, null);
+		parent::__construct($this->makeMessage($soapFault), 0, $soapFault);
 	}
 
 	private function makeMessage($soapFault) {
