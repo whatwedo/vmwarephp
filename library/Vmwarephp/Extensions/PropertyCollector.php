@@ -25,7 +25,22 @@ class PropertyCollector extends \Vmwarephp\ManagedObject {
 	}
 
 	private function getPropertiesUsingSpec($propertyFilterSpec, $options = array()) {
-		return $this->RetrieveProperties(array('specSet' => $propertyFilterSpec, 'options' => $options));
+		/** @var \ObjectContent[] $objectContents */
+		$objectContents = [];
+
+		/** @var \RetrieveResult $retrieveResult */
+		$retrieveResult = $this->RetrievePropertiesEx(['specSet' => $propertyFilterSpec, 'options' => $options]);
+		$objectContents = array_merge($objectContents, $retrieveResult->objects);
+
+		$token = $retrieveResult->token;
+		while (!is_null($token)) {
+			$retrieveResult = $this->ContinueRetrievePropertiesEx(['token' => $token]);
+			$objectContents = array_merge($objectContents, $retrieveResult->objects);
+
+			$token = $retrieveResult->token;
+		}
+
+		return $objectContents;
 	}
 
 	private function appendTraversedPropertiesToRequestedObject($collectionResult, $propertiesToCollect, $managedObjectType) {
