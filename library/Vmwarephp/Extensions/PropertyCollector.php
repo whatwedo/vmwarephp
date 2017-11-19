@@ -30,7 +30,9 @@ class PropertyCollector extends \Vmwarephp\ManagedObject {
 
 		/** @var \RetrieveResult $retrieveResult */
 		$retrieveResult = $this->RetrievePropertiesEx(['specSet' => $propertyFilterSpec, 'options' => $options]);
-		$objectContents = array_merge($objectContents, $retrieveResult->objects);
+		if (isset($retrieveResult->objects)) {
+			$objectContents = array_merge($objectContents, $retrieveResult->objects);
+		}
 
 		$token = $retrieveResult->token;
 		while (!is_null($token)) {

@@ -4,22 +4,22 @@ namespace Vmwarephp\Extensions;
 class SessionManager extends \Vmwarephp\ManagedObject {
 
 	private $cloneTicketFile;
-	private $session;
+	private $session = [];
 
 	function acquireSession($userName, $password) {
-		if ($this->session) {
-			return $this->session;
+		if (isset($this->session[$userName])) {
+			return $this->session[$userName];
 		}
 		try {
-			$this->session = $this->acquireSessionUsingCloneTicket();
+			$this->session[$userName] = $this->acquireSessionUsingCloneTicket($userName);
 		} catch (\Exception $e) {
-			$this->session = $this->acquireANewSession($userName, $password);
+			$this->session[$userName] = $this->acquireANewSession($userName, $password);
 		}
-		return $this->session;
+		return $this->session[$userName];
 	}
 
-	private function acquireSessionUsingCloneTicket() {
-		$cloneTicket = $this->readCloneTicket();
+	private function acquireSessionUsingCloneTicket($userName) {
+		$cloneTicket = $this->readCloneTicket($userName);
 		if (!$cloneTicket) {
 			throw new \Exception('Cannot find any clone ticket.');
 		}
@@ -29,25 +29,25 @@ class SessionManager extends \Vmwarephp\ManagedObject {
 	private function acquireANewSession($userName, $password) {
 		$session = $this->Login(array('userName' => $userName, 'password' => $password, 'locale' => null));
 		$cloneTicket = $this->AcquireCloneTicket();
-		$this->saveCloneTicket($cloneTicket);
+		$this->saveCloneTicket($userName, $cloneTicket);
 		return $session;
 	}
 
-	private function saveCloneTicket($cloneTicket) {
-		if (!file_put_contents($this->getCloneTicketFile(), $cloneTicket))
+	private function saveCloneTicket($userName, $cloneTicket) {
+		if (!file_put_contents($this->getCloneTicketFile($userName), $cloneTicket))
 			throw new \Exception(sprintf('There was an error writing to the clone ticket path. Check the permissions of the cache directory(%s)', __DIR__ . '/../'));
 	}
 
-	private function readCloneTicket() {
-		$ticketFile = $this->getCloneTicketFile();
+	private function readCloneTicket($userName) {
+		$ticketFile = $this->getCloneTicketFile($userName);
 		if (file_exists($ticketFile)) {
 			return file_get_contents($ticketFile);
 		}
 	}
 
-	private function getCloneTicketFile() {
+	private function getCloneTicketFile($userName) {
 		if (!$this->cloneTicketFile) {
-			$this->cloneTicketFile = __DIR__ . '/../.clone_ticket.cache';
+			$this->cloneTicketFile = __DIR__ . '/../.clone_ticket-' . str_replace(['\\', '/', '@'], '__', $userName) . '.cache';
 		}
 		return $this->cloneTicketFile;
 	}
